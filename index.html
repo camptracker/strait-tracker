@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Strait of Hormuz - Live Cargo & Gas Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+</head>
+<body>
+    <header>
+        <h1>⚓ Strait of Hormuz Live Tracker</h1>
+        <p class="subtitle">Real-time cargo ships & gas prices</p>
+        <div class="last-update">
+            Last updated: <span id="lastUpdate">Loading...</span>
+        </div>
+    </header>
+
+    <main>
+        <!-- Gas Prices Dashboard -->
+        <section class="gas-prices">
+            <h2>⛽ Gas & Oil Prices</h2>
+            <div class="price-grid">
+                <div class="price-card">
+                    <div class="price-label">Crude Oil (WTI)</div>
+                    <div class="price-value" id="wti-price">--</div>
+                    <div class="price-change" id="wti-change">--</div>
+                </div>
+                <div class="price-card">
+                    <div class="price-label">Brent Crude</div>
+                    <div class="price-value" id="brent-price">--</div>
+                    <div class="price-change" id="brent-change">--</div>
+                </div>
+                <div class="price-card">
+                    <div class="price-label">Natural Gas</div>
+                    <div class="price-value" id="natgas-price">--</div>
+                    <div class="price-change" id="natgas-change">--</div>
+                </div>
+                <div class="price-card">
+                    <div class="price-label">US Gas Average</div>
+                    <div class="price-value" id="gas-price">--</div>
+                    <div class="price-change" id="gas-change">--</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Ship Tracking Map -->
+        <section class="ship-tracker">
+            <h2>🚢 Live Ship Movements</h2>
+            <div class="map-controls">
+                <button onclick="filterVessels('all')" class="filter-btn active" id="btn-all">All Vessels</button>
+                <button onclick="filterVessels('cargo')" class="filter-btn" id="btn-cargo">Cargo Ships</button>
+                <button onclick="filterVessels('tanker')" class="filter-btn" id="btn-tanker">Tankers</button>
+                <button onclick="filterVessels('container')" class="filter-btn" id="btn-container">Container Ships</button>
+            </div>
+            <div id="map"></div>
+            <div class="vessel-stats">
+                <div class="stat-item">
+                    <span class="stat-label">Total Vessels:</span>
+                    <span class="stat-value" id="total-vessels">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Cargo Ships:</span>
+                    <span class="stat-value" id="cargo-count">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Tankers:</span>
+                    <span class="stat-value" id="tanker-count">0</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Recent Vessels Table -->
+        <section class="vessel-list">
+            <h2>📋 Recent Vessel Activity</h2>
+            <div class="table-wrapper">
+                <table id="vessel-table">
+                    <thead>
+                        <tr>
+                            <th>Vessel Name</th>
+                            <th>Type</th>
+                            <th>Flag</th>
+                            <th>Speed (kn)</th>
+                            <th>Heading</th>
+                            <th>Destination</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vessel-tbody">
+                        <tr>
+                            <td colspan="7" class="loading">Loading vessel data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Data Sources -->
+        <section class="data-sources">
+            <h3>📊 Data Sources</h3>
+            <ul>
+                <li><strong>Ship Tracking:</strong> AIS data via MarineTraffic API</li>
+                <li><strong>Oil Prices:</strong> Alpha Vantage & EIA APIs</li>
+                <li><strong>Gas Prices:</strong> GasBuddy & EIA data</li>
+                <li><strong>Update Frequency:</strong> Every 1 hour (automated via cron)</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer>
+        <p>Automated scraping via GitHub Actions • Data refreshed hourly</p>
+        <p>Strait of Hormuz coordinates: 26.5667°N, 56.2500°E</p>
+    </footer>
+
+    <script src="app.js"></script>
+</body>
+</html>

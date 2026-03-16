@@ -1,0 +1,19 @@
+{
+  "name": "strait-tracker",
+  "version": "1.0.0",
+  "description": "Real-time tracking of cargo ships and gas prices in Strait of Hormuz",
+  "main": "scraper.js",
+  "scripts": {
+    "scrape": "node scraper.js",
+    "serve": "python3 -m http.server 8000"
+  },
+  "keywords": [
+    "strait-of-hormuz",
+    "ship-tracking",
+    "ais",
+    "gas-prices",
+    "oil-prices"
+  ],
+  "author": "OpenClaw",
+  "license": "MIT"
+}
