@@ -43,6 +43,18 @@
                     <div class="price-change" id="gas-change">--</div>
                 </div>
             </div>
+            
+            <!-- Price History Chart -->
+            <div class="price-chart-section">
+                <h3>📈 10-Day Price Trends</h3>
+                <div class="chart-controls">
+                    <button onclick="switchChart('wti')" class="chart-btn active" id="chart-btn-wti">WTI</button>
+                    <button onclick="switchChart('brent')" class="chart-btn" id="chart-btn-brent">Brent</button>
+                    <button onclick="switchChart('natgas')" class="chart-btn" id="chart-btn-natgas">Natural Gas</button>
+                    <button onclick="switchChart('gasoline')" class="chart-btn" id="chart-btn-gasoline">Gasoline</button>
+                </div>
+                <div id="priceChart"></div>
+            </div>
         </section>
 
         <!-- Ship Tracking Map -->

@@ -3,6 +3,8 @@ let map;
 let vesselMarkers = [];
 let currentFilter = 'all';
 let vesselData = [];
+let priceHistory = [];
+let currentChart = 'wti';
 
 // Initialize map centered on Strait of Hormuz
 function initMap() {
@@ -257,15 +259,169 @@ function filterVessels(type) {
     updateVesselDisplay();
 }
 
+// Load price history
+async function loadPriceHistory() {
+    try {
+        const response = await fetch('data/price-history.json');
+        if (response.ok) {
+            priceHistory = await response.json();
+            renderPriceChart();
+        }
+    } catch (error) {
+        console.log('Price history not available yet');
+    }
+}
+
+// Switch between different price charts
+function switchChart(type) {
+    currentChart = type;
+    
+    // Update button states
+    document.querySelectorAll('.chart-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.getElementById(`chart-btn-${type}`).classList.add('active');
+    
+    renderPriceChart();
+}
+
+// Render price chart as SVG
+function renderPriceChart() {
+    if (!priceHistory || priceHistory.length === 0) {
+        document.getElementById('priceChart').innerHTML = '<div class="chart-loading">Loading price history...</div>';
+        return;
+    }
+    
+    const container = document.getElementById('priceChart');
+    const width = Math.min(900, container.offsetWidth || 800);
+    const height = 300;
+    const padding = { top: 20, right: 80, bottom: 50, left: 60 };
+    
+    const chartWidth = width - padding.left - padding.right;
+    const chartHeight = height - padding.top - padding.bottom;
+    
+    // Extract data for current chart type
+    const data = priceHistory.map(d => ({
+        date: d.date,
+        price: d[currentChart]
+    }));
+    
+    const prices = data.map(d => d.price);
+    const minPrice = Math.min(...prices) * 0.98;
+    const maxPrice = Math.max(...prices) * 1.02;
+    const priceRange = maxPrice - minPrice;
+    
+    // Calculate position
+    const getX = (i) => padding.left + (i / (data.length - 1)) * chartWidth;
+    const getY = (price) => padding.top + chartHeight - ((price - minPrice) / priceRange) * chartHeight;
+    
+    // Build path
+    const pathData = data.map((d, i) => 
+        `${i === 0 ? 'M' : 'L'} ${getX(i)} ${getY(d.price)}`
+    ).join(' ');
+    
+    // Calculate change
+    const firstPrice = prices[0];
+    const lastPrice = prices[prices.length - 1];
+    const change = lastPrice - firstPrice;
+    const changePercent = (change / firstPrice) * 100;
+    const isPositive = change >= 0;
+    const color = isPositive ? '#00e676' : '#ff6b6b';
+    
+    // Chart labels
+    const labels = {
+        wti: 'WTI Crude Oil',
+        brent: 'Brent Crude',
+        natgas: 'Natural Gas',
+        gasoline: 'US Gasoline'
+    };
+    
+    // Build SVG
+    let svg = `<svg width="${width}" height="${height}" style="display:block; margin:0 auto; background:#1a1a2e;">`;
+    
+    // Grid lines (horizontal)
+    for (let i = 0; i <= 4; i++) {
+        const y = padding.top + (chartHeight / 4) * i;
+        const price = maxPrice - (priceRange / 4) * i;
+        svg += `
+            <line x1="${padding.left}" y1="${y}" x2="${padding.left + chartWidth}" y2="${y}" 
+                  stroke="#444" stroke-width="1" opacity="0.3"/>
+            <text x="${padding.left - 8}" y="${y + 4}" text-anchor="end" 
+                  font-size="11" fill="#888">$${price.toFixed(2)}</text>
+        `;
+    }
+    
+    // X-axis labels (dates)
+    data.forEach((d, i) => {
+        if (i % Math.ceil(data.length / 5) !== 0 && i !== data.length - 1) return;
+        const x = getX(i);
+        const dateObj = new Date(d.date);
+        const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        svg += `
+            <text x="${x}" y="${padding.top + chartHeight + 30}" text-anchor="middle" 
+                  font-size="11" fill="#888">${dateStr}</text>
+        `;
+    });
+    
+    // Area under curve
+    svg += `
+        <path d="${pathData} L ${getX(data.length - 1)} ${padding.top + chartHeight} L ${padding.left} ${padding.top + chartHeight} Z"
+              fill="${color}" opacity="0.15"/>
+    `;
+    
+    // Line
+    svg += `
+        <path d="${pathData}" fill="none" stroke="${color}" stroke-width="3" 
+              stroke-linecap="round" stroke-linejoin="round"/>
+    `;
+    
+    // Data points
+    data.forEach((d, i) => {
+        const cx = getX(i);
+        const cy = getY(d.price);
+        svg += `
+            <circle cx="${cx}" cy="${cy}" r="4" fill="${color}" stroke="#1a1a2e" stroke-width="2">
+                <title>${d.date}: $${d.price.toFixed(2)}</title>
+            </circle>
+        `;
+    });
+    
+    // Current price indicator
+    const lastY = getY(lastPrice);
+    svg += `
+        <line x1="${padding.left + chartWidth}" y1="${lastY}" 
+              x2="${width - padding.right + 60}" y2="${lastY}" 
+              stroke="${color}" stroke-width="1" stroke-dasharray="3,3"/>
+        <text x="${width - padding.right + 8}" y="${lastY + 4}" 
+              font-size="12" font-weight="600" fill="${color}">$${lastPrice.toFixed(2)}</text>
+    `;
+    
+    // Title & stats
+    svg += `
+        <text x="${padding.left}" y="${padding.top - 5}" 
+              font-size="14" font-weight="600" fill="#fff">${labels[currentChart]} - 10 Day Trend</text>
+        <text x="${width - padding.right}" y="${padding.top - 5}" text-anchor="end"
+              font-size="13" font-weight="600" fill="${color}">
+            ${isPositive ? '+' : ''}$${change.toFixed(2)} (${isPositive ? '+' : ''}${changePercent.toFixed(2)}%)
+        </text>
+    `;
+    
+    svg += '</svg>';
+    
+    container.innerHTML = svg;
+}
+
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
     initMap();
     loadVesselData();
     loadGasPrices();
+    loadPriceHistory();
     
     // Refresh data every 5 minutes
     setInterval(() => {
         loadVesselData();
         loadGasPrices();
+        loadPriceHistory();
     }, 5 * 60 * 1000);
 });

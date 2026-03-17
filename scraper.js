@@ -124,11 +124,59 @@ async function fetchGasPrices() {
         fs.writeFileSync(output, JSON.stringify(prices, null, 2));
         console.log(`✅ Saved gas prices to ${output}`);
         
+        // Save historical data
+        saveHistoricalPrices(prices);
+        
         return prices;
     } catch (error) {
         console.error('❌ Error fetching gas prices:', error.message);
         return null;
     }
+}
+
+// Save historical price data (last 10 days)
+function saveHistoricalPrices(currentPrices) {
+    const historyPath = path.join(DATA_DIR, 'price-history.json');
+    let history = [];
+    
+    // Load existing history
+    if (fs.existsSync(historyPath)) {
+        try {
+            history = JSON.parse(fs.readFileSync(historyPath, 'utf8'));
+        } catch (e) {
+            console.log('Creating new price history...');
+            history = [];
+        }
+    }
+    
+    const timestamp = new Date().toISOString();
+    const date = timestamp.split('T')[0]; // YYYY-MM-DD
+    
+    // Check if we already have data for today
+    const todayIndex = history.findIndex(h => h.date === date);
+    
+    const dataPoint = {
+        date,
+        timestamp,
+        wti: currentPrices.wti.price,
+        brent: currentPrices.brent.price,
+        natgas: currentPrices.natgas.price,
+        gasoline: currentPrices.gasoline.price
+    };
+    
+    if (todayIndex >= 0) {
+        // Update today's entry (latest hourly reading)
+        history[todayIndex] = dataPoint;
+    } else {
+        // Add new day
+        history.push(dataPoint);
+    }
+    
+    // Keep only last 10 days
+    history = history.slice(-10);
+    
+    fs.writeFileSync(historyPath, JSON.stringify(history, null, 2));
+    console.log(`✅ Saved price history (${history.length} days)`);
 }
 
 // Main scraper function
